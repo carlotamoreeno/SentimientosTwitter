@@ -19,6 +19,9 @@ import spacy
 from spacy.lang.en import English
 import heapq
 from collections import defaultdict
+import networkx as nx
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
 
 
 class DataExtractor:
@@ -33,7 +36,7 @@ class DataExtractor:
         self.source = source
         self.data = None
         self.chunksize = chunksize
-        load_dotenv()  # Carga las variables de entorno (por ejemplo, RAPIDAPI_KEY)
+        load_dotenv()  # Carga las variables de entorno 
 
         # Crear directorios para la arquitectura medallón si no existen
         self.bronze_dir = "../data/bronze"
@@ -44,7 +47,7 @@ class DataExtractor:
         os.makedirs(self.gold_dir, exist_ok=True)
 
         # Descargar los recursos necesarios de NLTK si no están disponibles
-        # Descargar los recursos necesarios de NLTK si no están disponibles
+
         try:
             nltk.data.find('tokenizers/punkt')
         except LookupError:
@@ -70,8 +73,8 @@ class DataExtractor:
                 "Es necesario instalar el modelo de spaCy en_core_web_sm. Ejecuta: python -m spacy download en_core_web_sm")
             self.nlp = None
 
-    # Ya implementado - Esta función realiza la conexión a la API de Twitter mediante RapidAPI
-    # Método load_data_api existente...
+    # Esta función realiza la conexión a la API de Twitter mediante RapidAPI
+   
     def load_data_api(self, query: str, max_results: int = 100,
                       output_file: str = "tweets_from_api.csv") -> pd.DataFrame:
         """
@@ -200,7 +203,7 @@ class DataExtractor:
             print(f"Error al cargar los datos: {str(e)}")
             return None
 
-    # Método clean_text existente...
+    # Método clean_text 
     def clean_text(self, text: str) -> str:
         """
         Limpia y normaliza el texto.
@@ -222,8 +225,8 @@ class DataExtractor:
         # Eliminar URLs manteniendo el texto
         text = re.sub(r'https?://\S+', '', text)
 
-        # Eliminar menciones (@usuario)
-        text = re.sub(r'@\w+', '', text)
+        # Eliminar menciones (@usuario) comentamos esta linea para que no se eliminen las menciones
+        #text = re.sub(r'@\w+', '', text)
 
         # Eliminar caracteres especiales excepto hashtags y letras
         text = re.sub(r'[^\w\s#]', ' ', text)
@@ -233,7 +236,7 @@ class DataExtractor:
 
         return text
 
-    # Método extract_hashtags existente...
+    # Método extract_hashtags
     def extract_hashtags(self, text: str) -> list:
         """
         Extrae y devuelve una lista de hashtags presentes en el texto.
@@ -255,7 +258,7 @@ class DataExtractor:
 
         return hashtags
 
-    # Método analytics_hashtags_extended existente...
+    # Método analytics_hashtags_extended
     def analytics_hashtags_extended(self) -> dict:
         """
         Realiza un análisis avanzado de hashtags sobre los datos cargados en self.data.
@@ -301,7 +304,7 @@ class DataExtractor:
                 print("No se pudo convertir la columna 'date' a formato datetime.")
         else:
             print("No se encontró una columna de fecha ('date' o 'creation_date').")
-            df['date'] = datetime.now().date()  # Usamos la fecha actual como fallback
+            df['date'] = datetime.now().date()
 
         # 4. Explotar la columna 'hashtags' para contar cada ocurrencia
         # Crear un DataFrame separado para el análisis de hashtags
@@ -365,7 +368,7 @@ class DataExtractor:
 
             return {'overall': pd.DataFrame(), 'by_user': pd.DataFrame(), 'by_date': pd.DataFrame()}
 
-    # Método generate_hashtag_wordcloud existente...
+    # Método generate_hashtag_wordcloud
     def generate_hashtag_wordcloud(self, overall_df: pd.DataFrame = None, max_words: int = 100,
                                    figsize: tuple = (10, 6)) -> None:
         """
@@ -437,7 +440,7 @@ class DataExtractor:
             Lista de tópicos, por ejemplo: [['word1', 'word2', ...], ['word3', 'word4', ...], ...]
         """
         if self.data is None:
-            raise ValueError("No hay datos cargados. Utilice load_data() o load_data_api() primero.")
+            raise ValueError("No hay datos cargados.Porfavor utilice load_data() o load_data_api() primero.")
 
         # Verificar si existe la columna 'clean_text', y si no, crearla
         if 'clean_text' not in self.data.columns:
@@ -513,7 +516,7 @@ class DataExtractor:
 
         return topics
 
-    # Método para análisis de sentimiento (Nuevo)
+    # Método para análisis de sentimiento
     def analyze_sentiment(self, method: str = 'textblob') -> pd.DataFrame:
         """
         Analiza el sentimiento de cada tweet utilizando el método especificado.
@@ -554,9 +557,7 @@ class DataExtractor:
             if not isinstance(text, str) or text == "" or self.nlp is None:
                 return {'polarity': 0.0, 'subjectivity': 0.0}
 
-            # Esta es una implementación simplificada ya que spaCy por sí solo no tiene análisis de sentimiento
-            # En un caso real, necesitarías spacytextblob o una biblioteca similar
-            # Aquí usamos TextBlob como fallback
+            
             analysis = TextBlob(text)
             return {
                 'polarity': analysis.sentiment.polarity,
@@ -591,7 +592,7 @@ class DataExtractor:
         # 1. Distribución de polaridad
         plt.figure(figsize=(10, 6))
         plt.hist(df['sentiment_polarity'], bins=20, color='skyblue', edgecolor='black')
-        plt.title('Distribución de Polaridad del Sentimiento')
+        plt.title('La distribucionn de Polaridad del Sentimiento')
         plt.xlabel('Polaridad')
         plt.ylabel('Frecuencia')
         plt.savefig(f"{self.gold_dir}/sentiment_polarity_distribution_{timestamp}.png")
@@ -614,7 +615,7 @@ class DataExtractor:
 
         return self.data
 
-    # Método para parsing y resumen de textos (Nuevo)
+    # Método para parsing y resumen de textos
     def parse_and_summarize(self, summary_ratio: float = 0.3) -> str:
         """
         Realiza un análisis de parsing y genera un resumen extractivo del corpus.
@@ -633,7 +634,7 @@ class DataExtractor:
             Un string con el resumen generado.
         """
         if self.data is None:
-            raise ValueError("No hay datos cargados. Utilice load_data() o load_data_api() primero.")
+            raise ValueError("No hay datos cargados. Porfavor utilice load_data() o load_data_api() primero.")
 
         # Verificar si existe la columna 'clean_text', y si no, crearla
         if 'clean_text' not in self.data.columns:
@@ -908,7 +909,670 @@ Informe generado automáticamente el {datetime.now().strftime("%Y-%m-%d %H:%M:%S
 
         return report_file
 
-
+    # --- ANÁLISIS DE REDES CON NETWORKX ---
+    def build_interaction_graph(self) -> nx.DiGraph:
+        """
+        Construye un grafo de interacciones a partir de los datos.
+        Se asume que self.data tiene las columnas 'user' y 'text' para extraer interacciones.
+        
+        Las interacciones se basan en:
+        - Menciones explícitas (@usuario) dentro de los tweets
+        - Menciones implícitas (nombres de usuario o términos relevantes)
+        - Referencias a otros usuarios
+        
+        Devuelve:
+            Un grafo dirigido (nx.DiGraph) donde los nodos son usuarios y las aristas 
+            representan menciones o referencias de un usuario a otro.
+        """
+        if self.data is None:
+            raise ValueError("No hay datos cargados. Utilice load_data() o load_data_api() primero.")
+        
+        # Verificar que existen las columnas necesarias
+        if 'user' not in self.data.columns:
+            print("No se encontró la columna 'user' en los datos.")
+            
+        if 'text' not in self.data.columns:
+            print("No se encontró la columna 'text' en los datos.")
+            
+        # Crear un grafo dirigido
+        G = nx.DiGraph()
+        
+        # Función para extraer menciones explícitas
+        def extract_mentions(text):
+            if not isinstance(text, str):
+                return []
+            # Buscar patrones que comiencen con @ seguido de caracteres alfanuméricos
+            mentions = re.findall(r'@\w+', text.lower())
+            # Eliminar el @ y convertir a minúsculas
+            return [mention[1:].lower() for mention in mentions]
+        
+        # Función para detectar menciones implícitas (sin @)
+        def extract_implicit_mentions(text, known_users):
+            if not isinstance(text, str) or not known_users:
+                return []
+            
+            text_lower = text.lower()
+            implicit_mentions = []
+            
+            # Buscar nombres de usuario conocidos en el texto
+            for user in known_users:
+                # Evitar falsos positivos con nombres muy cortos
+                if len(user) <= 3:
+                    continue
+                    
+                # Buscar el nombre de usuario sin @ como palabra separada
+                pattern = r'\b' + re.escape(user) + r'\b'
+                if re.search(pattern, text_lower):
+                    implicit_mentions.append(user)
+                    
+            return implicit_mentions
+            
+        # Función para extraer el nombre de usuario
+        def get_username(user_data):
+            try:
+                # Si es un diccionario, extraer directamente
+                if isinstance(user_data, dict):
+                    return user_data.get('username', '').lower() or 'unknown'
+                
+                # Si es un string, ver si es JSON o un diccionario serializado como string
+                if isinstance(user_data, str):
+                    # Caso 1: Es un diccionario con formato Python serializado como string
+                    if user_data.startswith('{') and '}' in user_data:
+                        try:
+                            # Reemplazar valores Python por valores JSON
+                            # Usamos ast.literal_eval que es más seguro que eval
+                            import ast
+                            safe_str = user_data.replace('None', 'null').replace('True', 'true').replace('False', 'false')
+                            # Convertir de nuevo a formato Python para ast.literal_eval
+                            safe_str = safe_str.replace('null', 'None').replace('true', 'True').replace('false', 'False')
+                            user_dict = ast.literal_eval(safe_str)
+                            return user_dict.get('username', '').lower() or 'unknown'
+                        except Exception as e:
+                            print(f"Error al evaluar diccionario de usuario: {str(e)}")
+                            
+                    # Caso 2: Intentar parsear como JSON
+                    try:
+                        user_dict = json.loads(user_data)
+                        return user_dict.get('username', '').lower() or 'unknown'
+                    except:
+                        pass
+            except Exception as e:
+                print(f"Error al procesar usuario: {str(e)}")
+            
+            return 'unknown'
+            
+        # Función para extraer hashtags
+        def extract_hashtags(text):
+            if not isinstance(text, str):
+                return []
+            # Buscar patrones que comiencen con # seguido de caracteres alfanuméricos
+            hashtags = re.findall(r'#\w+', text.lower())
+            # Eliminar el # y convertir a minúsculas
+            return [hashtag[1:].lower() for hashtag in hashtags]
+        
+        print("Se esta construyendo elgrafo de interacciones...")
+        
+        # Inspeccionar algunos registros para debug
+        print(f"Muestra de datos, los primeros 3 registros:")
+        for i, (_, row) in enumerate(self.data.head(3).iterrows()):
+            print(f"\nRegistro {i+1}:")
+            print(f"- Tipo de 'user': {type(row.get('user', 'No encontrado'))}")
+            user_sample = str(row.get('user', 'No encontrado'))[:100] + "..." if len(str(row.get('user', 'No encontrado'))) > 100 else str(row.get('user', 'No encontrado'))
+            print(f"- Muestra de 'user': {user_sample}")
+            username = get_username(row.get('user', {}))
+            print(f"- Username extraído: {username}")
+            
+            text_sample = str(row.get('text', 'No encontrado'))[:100] + "..." if len(str(row.get('text', 'No encontrado'))) > 100 else str(row.get('text', 'No encontrado'))
+            print(f"- Muestra de 'text': {text_sample}")
+            mentions = extract_mentions(row.get('text', ''))
+            print(f"- Menciones explícitas: {mentions}")
+        
+        # Primera pasada: recopilar todos los usuarios
+        known_users = set()
+        usernames_by_id = {}  # Para mapear IDs a usernames
+        
+        for _, row in self.data.iterrows():
+            try:
+                # Extraer el username del campo 'user'
+                username = get_username(row.get('user', {}))
+                
+                if username != 'unknown':
+                    known_users.add(username)
+                    
+                # También extraer el user_id si está disponible
+                if isinstance(row.get('user', {}), str) and row.get('user', {}).startswith('{'):
+                    try:
+                        import ast
+                        safe_str = row.get('user', '{}').replace('None', 'null').replace('True', 'true').replace('False', 'false')
+                        safe_str = safe_str.replace('null', 'None').replace('true', 'True').replace('false', 'False')
+                        user_dict = ast.literal_eval(safe_str)
+                        user_id = user_dict.get('user_id', '')
+                        if user_id and username != 'unknown':
+                            usernames_by_id[user_id] = username
+                    except:
+                        pass
+                
+            except Exception as e:
+                print(f"Error al extraer usuario: {str(e)}")
+                
+        print(f"Se identificaron {len(known_users)} usuarios distintos.")
+        
+        # Términos relevantes del dominio para buscar menciones implícitas
+        domain_terms = [
+            'rafaelnadal', 'rafa', 'nadal', 'nadalfc', 'rafanadal',
+            'elonmusk', 'elon', 'musk', 'tesla',
+        ]
+        
+        # Segunda pasada: construir el grafo con menciones explícitas e implícitas
+        for _, row in self.data.iterrows():
+            try:
+                # Obtener el usuario que emitió el tweet
+                source_user = get_username(row.get('user', {}))
+                
+                # Si no se pudo determinar el usuario fuente, continuar con el siguiente tweet
+                if source_user == 'unknown':
+                    continue
+                
+                # Añadir el nodo al grafo (si no existe)
+                if not G.has_node(source_user):
+                    G.add_node(source_user)
+                
+                # Extraer menciones del texto
+                text = row.get('text', '')
+                
+                # 1. Menciones explícitas (@usuario)
+                explicit_mentions = extract_mentions(text)
+                
+                # 2. Menciones implícitas (nombres sin @)
+                implicit_mentions = extract_implicit_mentions(text, known_users.union(domain_terms))
+                
+                # 3. Hashtags como nodos adicionales
+                hashtags = [f"#{tag}" for tag in extract_hashtags(text)]
+                
+                # Combinar todas las menciones (usuarios y hashtags)
+                all_mentions = set(explicit_mentions + implicit_mentions)
+                
+                # Añadir aristas por cada mención
+                for target_user in all_mentions:
+                    # No añadir auto-menciones
+                    if source_user != target_user:
+                        # Añadir el nodo destino si no existe
+                        if not G.has_node(target_user):
+                            G.add_node(target_user)
+                        
+                        # Añadir la arista o incrementar su peso si ya existe
+                        if G.has_edge(source_user, target_user):
+                            G[source_user][target_user]['weight'] += 1
+                        else:
+                            G.add_edge(source_user, target_user, weight=1)
+                
+                # Añadir hashtags como nodos
+                for hashtag in hashtags:
+                    if not G.has_node(hashtag):
+                        G.add_node(hashtag, type='hashtag')
+                    
+                    # Conectar usuario con hashtag
+                    if G.has_edge(source_user, hashtag):
+                        G[source_user][hashtag]['weight'] += 1
+                    else:
+                        G.add_edge(source_user, hashtag, weight=1)
+                
+            except Exception as e:
+                print(f"Error al procesar un tweet: {str(e)}")
+                continue
+        
+        # Si el grafo quedó muy pequeño, intentar crear conexiones adicionales basadas en el tema común
+        if len(G.edges()) < 5:
+            print("Pocas interacciones detectadas. Añadiendo conexiones basadas en tema común...")
+            
+            # Crear un nodo central para el tema principal (según dataset)
+            central_topic = "rafa_nadal" if any("nadal" in k for k in known_users) else "elon_musk"
+            G.add_node(central_topic, type='topic')
+            
+            # Conectar todos los usuarios al tema central
+            for user in known_users:
+                if not G.has_edge(user, central_topic):
+                    G.add_edge(user, central_topic, weight=0.5)
+                if not G.has_edge(central_topic, user):
+                    G.add_edge(central_topic, user, weight=0.5)
+        
+        print(f"Grafo construido con {len(G.nodes())} nodos y {len(G.edges())} aristas.")
+        
+        # Guardar el grafo en formato GraphML en la capa Gold
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        graph_file = f"{self.gold_dir}/interaction_graph_{timestamp}.graphml"
+        try:
+            nx.write_graphml(G, graph_file)
+            print(f"Grafo de interacciones guardado en: {graph_file}")
+        except Exception as e:
+            print(f"Error al guardar el grafo: {str(e)}")
+        
+        return G
+    
+    def analyze_network(self, G: nx.DiGraph = None) -> dict:
+        """
+        Calcula métricas de red y detecta comunidades utilizando el algoritmo de Louvain.
+        Imprime estadísticas y genera visualizaciones.
+        
+        Parámetros:
+            G: Grafo dirigido de networkx. Si es None, se llama a build_interaction_graph.
+            
+        Devuelve:
+            Un diccionario con las métricas calculadas y resultados del análisis.
+        """
+        if G is None:
+            G = self.build_interaction_graph()
+        
+        if len(G.nodes()) == 0:
+            print("El grafo está vacío. No hay interacciones para analizar.")
+            return {}
+        
+        # Convertir a grafo no dirigido para algunas métricas y detección de comunidades
+        UG = G.to_undirected()
+        
+        # Calcular métricas básicas
+        metrics = {}
+        
+        # Número de nodos y aristas
+        metrics['num_nodes'] = len(G.nodes())
+        metrics['num_edges'] = len(G.edges())
+        
+        # Grado (in, out, total)
+        in_degree = dict(G.in_degree(weight='weight'))
+        out_degree = dict(G.out_degree(weight='weight'))
+        metrics['max_in_degree'] = max(in_degree.items(), key=lambda x: x[1]) if in_degree else ('none', 0)
+        metrics['max_out_degree'] = max(out_degree.items(), key=lambda x: x[1]) if out_degree else ('none', 0)
+        
+        # Calcular centralidades
+        try:
+            # Centralidad de grado
+            degree_centrality = nx.degree_centrality(G)
+            metrics['top_degree_centrality'] = sorted(degree_centrality.items(), key=lambda x: x[1], reverse=True)[:3]
+            
+            # Centralidad de intermediación (betweenness)
+            betweenness_centrality = nx.betweenness_centrality(G, weight='weight')
+            metrics['top_betweenness_centrality'] = sorted(betweenness_centrality.items(), key=lambda x: x[1], reverse=True)[:3]
+            
+            # Centralidad de cercanía (closeness)
+            # Puede fallar en grafos no conectados, usamos try/except
+            try:
+                closeness_centrality = nx.closeness_centrality(G)
+                metrics['top_closeness_centrality'] = sorted(closeness_centrality.items(), key=lambda x: x[1], reverse=True)[:3]
+            except:
+                metrics['top_closeness_centrality'] = []
+            
+            # Centralidad de eigenvector
+            try:
+                eigenvector_centrality = nx.eigenvector_centrality(G, weight='weight')
+                metrics['top_eigenvector_centrality'] = sorted(eigenvector_centrality.items(), key=lambda x: x[1], reverse=True)[:3]
+            except:
+                # Puede fallar en grafos muy grandes o no convergentes
+                metrics['top_eigenvector_centrality'] = []
+        except Exception as e:
+            print(f"Error al calcular centralidades: {str(e)}")
+        
+        # Detección de comunidades (en el grafo no dirigido)
+        try:
+            import community as community_louvain
+            partition = community_louvain.best_partition(UG)
+            
+            # Contar nodos por comunidad
+            community_counts = {}
+            for node, community_id in partition.items():
+                if community_id not in community_counts:
+                    community_counts[community_id] = []
+                community_counts[community_id].append(node)
+            
+            # Ordenar comunidades por tamaño
+            sorted_communities = sorted(community_counts.items(), key=lambda x: len(x[1]), reverse=True)
+            metrics['communities'] = sorted_communities
+            metrics['num_communities'] = len(sorted_communities)
+            
+            # Las comunidades más grandes
+            metrics['largest_communities'] = sorted_communities[:3] if len(sorted_communities) >= 3 else sorted_communities
+        except ImportError:
+            print("No se pudo importar python-louvain. Instálelo con: pip install python-louvain")
+            metrics['communities'] = []
+            metrics['num_communities'] = 0
+            metrics['largest_communities'] = []
+        except Exception as e:
+            print(f"Error en la detección de comunidades: {str(e)}")
+            metrics['communities'] = []
+            metrics['num_communities'] = 0
+            metrics['largest_communities'] = []
+        
+        # Visualizar el grafo
+        try:
+            plt.figure(figsize=(12, 10))
+            
+            # Posicionamiento usando Fruchterman-Reingold
+            pos = nx.spring_layout(G, k=0.3)
+            
+            # Calcular tamaños de nodo basados en centralidad de grado
+            node_size = [v * 3000 + 100 for v in degree_centrality.values()]
+            
+            # Dibujar nodos
+            nx.draw_networkx_nodes(G, pos, 
+                                  node_size=node_size,
+                                  node_color="skyblue", 
+                                  alpha=0.8)
+            
+            # Dibujar aristas con transparencia proporcional al peso
+            edge_width = [data['weight'] * 0.2 for _, _, data in G.edges(data=True)]
+            nx.draw_networkx_edges(G, pos, 
+                                  width=edge_width,
+                                  alpha=0.4, 
+                                  edge_color="gray",
+                                  arrows=True,
+                                  arrowsize=10)
+            
+            # Añadir etiquetas solo para los nodos más centrales
+            top_nodes = [node for node, _ in metrics['top_degree_centrality']]
+            labels = {node: node for node in top_nodes}
+            nx.draw_networkx_labels(G, pos, labels=labels, font_size=10)
+            
+            plt.title(f"Grafo de interacciones ({len(G.nodes())} usuarios, {len(G.edges())} interacciones)")
+            plt.axis('off')
+            
+            # Guardar la visualización
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            viz_file = f"{self.gold_dir}/network_visualization_{timestamp}.png"
+            plt.tight_layout()
+            plt.savefig(viz_file, dpi=300, bbox_inches='tight')
+            plt.close()
+            print(f"Visualización de la red guardada en: {viz_file}")
+            
+            # Si hay detección de comunidades, crear visualización con colores por comunidad
+            if metrics['communities']:
+                plt.figure(figsize=(12, 10))
+                
+                # Colores por comunidad
+                cmap = plt.get_cmap('tab20')
+                colors = [cmap(i) for i in range(min(20, len(metrics['communities'])))]
+                
+                # Asignar colores a nodos según su comunidad
+                node_colors = [colors[partition[node] % len(colors)] for node in G.nodes()]
+                
+                # Dibujar con colores por comunidad
+                nx.draw_networkx_nodes(G, pos, 
+                                      node_size=node_size,
+                                      node_color=node_colors, 
+                                      alpha=0.8)
+                
+                # Dibujar aristas
+                nx.draw_networkx_edges(G, pos, 
+                                      width=edge_width,
+                                      alpha=0.3, 
+                                      edge_color="gray",
+                                      arrows=True,
+                                      arrowsize=10)
+                
+                # Etiquetas para nodos principales
+                nx.draw_networkx_labels(G, pos, labels=labels, font_size=10)
+                
+                plt.title(f"Comunidades en la red de interacciones ({metrics['num_communities']} comunidades)")
+                plt.axis('off')
+                
+                # Guardar visualización de comunidades
+                community_viz_file = f"{self.gold_dir}/network_communities_{timestamp}.png"
+                plt.tight_layout()
+                plt.savefig(community_viz_file, dpi=300, bbox_inches='tight')
+                plt.close()
+                print(f"Visualización de comunidades guardada en: {community_viz_file}")
+                
+        except Exception as e:
+            print(f"Error al generar visualización: {str(e)}")
+        
+        # Guardar métricas en JSON
+        try:
+            # Filtrar datos serializables para JSON
+            json_metrics = {
+                'num_nodes': metrics['num_nodes'],
+                'num_edges': metrics['num_edges'],
+                'max_in_degree': {'user': metrics['max_in_degree'][0], 'value': metrics['max_in_degree'][1]},
+                'max_out_degree': {'user': metrics['max_out_degree'][0], 'value': metrics['max_out_degree'][1]},
+                'num_communities': metrics['num_communities'],
+                'top_degree_centrality': [{'user': u, 'value': v} for u, v in metrics.get('top_degree_centrality', [])],
+                'top_betweenness_centrality': [{'user': u, 'value': v} for u, v in metrics.get('top_betweenness_centrality', [])]
+            }
+            
+            # Guardar en JSON
+            metrics_file = f"{self.gold_dir}/network_metrics_{timestamp}.json"
+            with open(metrics_file, 'w', encoding='utf-8') as f:
+                json.dump(json_metrics, f, indent=4)
+            print(f"Métricas de red guardadas en: {metrics_file}")
+        except Exception as e:
+            print(f"Error al guardar métricas: {str(e)}")
+        
+        return metrics
+    
+    # --- IMPLEMENTACIÓN DE LLMs Y CHAT INTERACTIVO ---
+    def generate_prompt_from_network(self, G: nx.DiGraph = None, metrics: dict = None) -> str:
+        """
+        Genera un prompt para el LLM utilizando insights del análisis de la red.
+        Se extraen métricas como el top 3 de nodos por centralidad y el hashtag más frecuente.
+        
+        Parámetros:
+            G: Grafo dirigido de networkx. Si es None, se usa el último grafo generado.
+            metrics: Diccionario con métricas de red. Si es None, se calcula usando analyze_network.
+            
+        Devuelve:
+            Un string con el prompt generado.
+        """
+        # Si no se proporcionan métricas ni grafo, realizar el análisis
+        if metrics is None:
+            if G is None:
+                # Intentar cargar un grafo guardado o crear uno nuevo
+                try:
+                    metrics = self.analyze_network()
+                except Exception as e:
+                    print(f"Error al analizar la red: {str(e)}")
+                    return "No se pudieron obtener métricas de la red para generar el prompt."
+        
+        # Obtener los hashtags más frecuentes si están disponibles
+        top_hashtags = []
+        try:
+            hashtag_analysis = self.analytics_hashtags_extended()
+            if 'overall' in hashtag_analysis and not hashtag_analysis['overall'].empty:
+                top_hashtags = hashtag_analysis['overall'].head(5)['hashtag'].tolist()
+        except Exception as e:
+            print(f"Error al obtener hashtags: {str(e)}")
+        
+        # Crear el prompt
+        prompt = "Eres un experto en análisis de redes sociales y comportamiento en línea. "
+        prompt += "He analizado una red de interacciones en Twitter y te proporciono los siguientes datos:\n\n"
+        
+        # Añadir métricas básicas
+        prompt += f"- La red tiene {metrics.get('num_nodes', 'desconocido')} usuarios y {metrics.get('num_edges', 'desconocido')} interacciones.\n"
+        
+        # Añadir información sobre comunidades
+        if 'num_communities' in metrics and metrics['num_communities'] > 0:
+            prompt += f"- Se han detectado {metrics.get('num_communities', 0)} comunidades distintas en la red.\n"
+            
+            # Información sobre las comunidades más grandes
+            if 'largest_communities' in metrics and metrics['largest_communities']:
+                prompt += "- Las comunidades más grandes son:\n"
+                for i, (comm_id, members) in enumerate(metrics['largest_communities'][:3]):
+                    prompt += f"  * Comunidad {i+1}: {len(members)} miembros\n"
+        
+        # Añadir usuarios más influyentes
+        if 'top_degree_centrality' in metrics and metrics['top_degree_centrality']:
+            prompt += "\nUsuarios con mayor centralidad de grado (los más conectados):\n"
+            for user, value in metrics['top_degree_centrality']:
+                prompt += f"- @{user}: {value:.4f}\n"
+        
+        if 'top_betweenness_centrality' in metrics and metrics['top_betweenness_centrality']:
+            prompt += "\nUsuarios con mayor centralidad de intermediación (puentes entre comunidades):\n"
+            for user, value in metrics['top_betweenness_centrality']:
+                prompt += f"- @{user}: {value:.4f}\n"
+        
+        # Añadir usuario con más seguidores y más activo
+        if 'max_in_degree' in metrics:
+            prompt += f"\nUsuario más mencionado: @{metrics['max_in_degree'][0]} con {metrics['max_in_degree'][1]} menciones\n"
+        
+        if 'max_out_degree' in metrics:
+            prompt += f"Usuario que más menciona a otros: @{metrics['max_out_degree'][0]} con {metrics['max_out_degree'][1]} menciones a otros\n"
+        
+        # Añadir hashtags populares
+        if top_hashtags:
+            prompt += "\nHashtags más utilizados en los tweets analizados:\n"
+            for hashtag in top_hashtags:
+                prompt += f"- #{hashtag}\n"
+        
+        # Solicitar análisis
+        prompt += "\nBasándote en estos datos, por favor:\n"
+        prompt += "1. Identifica patrones de interacción importantes en esta red social.\n"
+        prompt += "2. ¿Qué tipo de estructura de red parece ser (centralizada, descentralizada, distribuida)?\n"
+        prompt += "3. ¿Qué roles parecen tener los usuarios más centrales?\n"
+        prompt += "4. ¿Qué temas o conversaciones podrían estar ocurriendo basados en los hashtags y la estructura de la red?\n"
+        prompt += "5. Proporciona recomendaciones para alguien que quiera aumentar su influencia en esta red.\n"
+        
+        # Guardar el prompt generado en un archivo
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            prompt_file = f"{self.gold_dir}/llm_prompt_{timestamp}.txt"
+            with open(prompt_file, 'w', encoding='utf-8') as f:
+                f.write(prompt)
+            print(f"Prompt guardado en: {prompt_file}")
+        except Exception as e:
+            print(f"Error al guardar el prompt: {str(e)}")
+        
+        return prompt
+    
+    def chat_local_llm(self, prompt: str = None, model_name: str = "google/gemma-2-2b-it"):
+        """
+        Levanta un modelo LLM preentrenado (gemma-2-2b-it por defecto) o utiliza la API de OpenAI
+        para generar respuestas basadas en el prompt.
+        
+        Parámetros:
+            prompt: String con el prompt inicial. Si es None, se solicitará al usuario.
+            model_name: Nombre del modelo a utilizar. Puede ser:
+                       - un modelo de HuggingFace (ej: "google/gemma-2-2b-it")
+                       - un modelo de OpenAI (ej: "gpt-4o", "gpt-4", "gpt-3.5-turbo")
+            
+        Devuelve:
+            La respuesta generada por el modelo.
+        """
+        try:
+            # Si no se proporciona un prompt, generar uno a partir del análisis de red
+            if prompt is None:
+                try:
+                    print("Generando prompt a partir del análisis de red...")
+                    prompt = self.generate_prompt_from_network()
+                except Exception as e:
+                    print(f"Error al generar prompt: {str(e)}")
+                    prompt = input("Por favor, ingrese un prompt para el modelo: ")
+            
+            print("\nPrompt para el modelo:")
+            print("-" * 50)
+            print(prompt[:500] + "..." if len(prompt) > 500 else prompt)
+            print("-" * 50)
+            
+            # Verificar si es un modelo de OpenAI
+            is_openai_model = model_name.lower() in ["gpt-4o", "gpt-4", "gpt-3.5-turbo", "gpt-4-turbo"]
+            
+            if is_openai_model:
+                # Usar la API de OpenAI
+                import openai
+                
+                # Obtener la clave de API desde el archivo .env
+                api_key = os.getenv("OPENAI_API_KEY")
+                if not api_key:
+                    print("AVISO: No se encontró OPENAI_API_KEY en el archivo .env")
+                    api_key = input("Ingrese su clave de API de OpenAI: ")
+                    os.environ["OPENAI_API_KEY"] = api_key
+                else:
+                    print("OPENAI_API_KEY encontrada en el archivo .env")
+                
+                # Configurar el cliente
+                client = openai.OpenAI(api_key=api_key)
+                
+                print(f"\nUsando modelo de OpenAI: {model_name}")
+                print("Generando respuesta, esto puede tomar unos momentos...")
+                
+                # Llamar a la API de OpenAI
+                response = client.chat.completions.create(
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": "Eres un experto en análisis de redes sociales y comportamiento en línea."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=2000
+                )
+                
+                # Extraer la respuesta del modelo
+                response_text = response.choices[0].message.content
+                
+            else:
+                # Usar un modelo local de HuggingFace
+                # Crear directorio para cachear modelos si no existe
+                os.makedirs("models_cache", exist_ok=True)
+                
+                print(f"Cargando modelo {model_name}...")
+                # Cargar tokenizer y modelo
+                tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir="models_cache")
+                model = AutoModelForCausalLM.from_pretrained(
+                    model_name, 
+                    cache_dir="models_cache",
+                    torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+                    device_map="auto" if torch.cuda.is_available() else None
+                )
+                
+                # Verificar disponibilidad de GPU
+                device = "cuda" if torch.cuda.is_available() else "cpu"
+                print(f"Usando dispositivo: {device}")
+                
+                if device == "cpu":
+                    print("ADVERTENCIA: Estás usando CPU para inferencia. El proceso puede ser muy lento.")
+                
+                # Generar respuesta
+                print("\nGenerando respuesta, esto puede tomar un tiempo...")
+                inputs = tokenizer(prompt, return_tensors="pt")
+                if device == "cuda":
+                    inputs = inputs.to(device)
+                
+                # Configuración de generación
+                gen_config = {
+                    "max_new_tokens": 1024,
+                    "do_sample": True,
+                    "temperature": 0.7,
+                    "top_p": 0.95,
+                    "repetition_penalty": 1.15
+                }
+                
+                # Generar respuesta
+                with torch.no_grad():
+                    outputs = model.generate(
+                        **inputs,
+                        **gen_config
+                    )
+                
+                # Decodificar y obtener solo la respuesta (no el prompt)
+                full_response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+                response_text = full_response[len(tokenizer.decode(inputs.input_ids[0], skip_special_tokens=True)):].strip()
+            
+            # Guardar respuesta independientemente del modelo usado
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            response_file = f"{self.gold_dir}/llm_response_{timestamp}.txt"
+            with open(response_file, 'w', encoding='utf-8') as f:
+                f.write(f"PROMPT:\n{prompt}\n\nRESPUESTA:\n{response_text}")
+            print(f"\nRespuesta guardada en: {response_file}")
+            
+            # Mostrar respuesta
+            print("\nRespuesta del modelo:")
+            print("=" * 50)
+            print(response_text)
+            print("=" * 50)
+            
+            return response_text
+            
+        except Exception as e:
+            print(f"Error al usar el modelo LLM: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return f"Error: {str(e)}"
+            
 # --- MAIN para probar las fases Bronze, Silver y Gold ---
 if __name__ == "__main__":
     # Crear una instancia del extractor
@@ -918,7 +1582,9 @@ if __name__ == "__main__":
     print("Seleccione una opción:")
     print("1. Extraer datos de la API de Twitter (fase Bronze)")
     print("2. Cargar datos existentes y procesar (fases Silver y Gold)")
-    option = input("Opción (1/2): ")
+    print("3. Análisis de red social con NetworkX")
+    print("4. Generar prompt para LLM y obtener análisis")
+    option = input("Opción (1/2/3/4): ")
 
     if option == "1":
         # Fase Bronze: Extraer datos de la API
@@ -938,10 +1604,10 @@ if __name__ == "__main__":
                 print("Proceso finalizado en la fase Bronze.")
                 exit()
 
-    if option == "2" or (option == "1" and continue_next.lower() == 's'):
+    if option in ["2", "3", "4"] or (option == "1" and continue_next.lower() == 's'):
         # Fase Silver y Gold: Cargar y procesar datos
-        if option == "2":
-            # Si viene de la opción 2, necesitamos cargar los datos desde un archivo
+        if option in ["2", "3", "4"]:
+            # Si viene de la opción 2, 3 o 4, necesitamos cargar los datos desde un archivo
             bronze_files = [f for f in os.listdir(extractor.bronze_dir) if f.endswith('.csv')]
 
             if not bronze_files:
@@ -968,76 +1634,158 @@ if __name__ == "__main__":
                 print("Error al cargar los datos.")
                 exit()
 
-        # Fase Silver: Mostrar información básica del dataset
-        print("\n--- FASE SILVER: PROCESAMIENTO Y LIMPIEZA ---")
-        print("\nInformación del dataset:")
-        print(f"- Número de registros: {len(extractor.data)}")
-        print(f"- Columnas disponibles: {extractor.data.columns.tolist()}")
+        if option in ["2", "1"]:
+            # Fase Silver: Mostrar información básica del dataset
+            print("\n--- FASE SILVER: PROCESAMIENTO Y LIMPIEZA ---")
+            print("\nInformación del dataset:")
+            print(f"- Número de registros: {len(extractor.data)}")
+            print(f"- Columnas disponibles: {extractor.data.columns.tolist()}")
 
-        # Mostrar ejemplo de limpieza de texto
-        if 'text' in extractor.data.columns and len(extractor.data) > 0:
-            sample_text = extractor.data['text'].iloc[0]
-            clean_sample = extractor.clean_text(sample_text)
-            print("\nEjemplo de limpieza de texto:")
-            print(f"Original: {sample_text[:100]}..." if len(sample_text) > 100 else f"Original: {sample_text}")
-            print(f"Limpio: {clean_sample[:100]}..." if len(clean_sample) > 100 else f"Limpio: {clean_sample}")
+            # Mostrar ejemplo de limpieza de texto
+            if 'text' in extractor.data.columns and len(extractor.data) > 0:
+                sample_text = extractor.data['text'].iloc[0]
+                clean_sample = extractor.clean_text(sample_text)
+                print("\nEjemplo de limpieza de texto:")
+                print(f"Original: {sample_text[:100]}..." if len(sample_text) > 100 else f"Original: {sample_text}")
+                print(f"Limpio: {clean_sample[:100]}..." if len(clean_sample) > 100 else f"Limpio: {clean_sample}")
 
-        # Realizar análisis de hashtags
-        print("\nRealizando análisis de hashtags...")
-        hashtag_analysis = extractor.analytics_hashtags_extended()
+            # Realizar análisis de hashtags
+            print("\nRealizando análisis de hashtags...")
+            hashtag_analysis = extractor.analytics_hashtags_extended()
 
-        # Mostrar resultados del análisis
-        overall_hashtags = hashtag_analysis['overall']
-        if not overall_hashtags.empty:
-            print("\nTop 10 hashtags más frecuentes:")
-            print(overall_hashtags.head(10))
+            # Mostrar resultados del análisis
+            overall_hashtags = hashtag_analysis['overall']
+            if not overall_hashtags.empty:
+                print("\nTop 10 hashtags más frecuentes:")
+                print(overall_hashtags.head(10))
 
-            # Generar nube de palabras
-            print("\nGenerando nube de palabras de hashtags...")
-            extractor.generate_hashtag_wordcloud(overall_hashtags)
-        else:
-            print("No se encontraron hashtags en los datos.")
+                # Generar nube de palabras
+                print("\nGenerando nube de palabras de hashtags...")
+                extractor.generate_hashtag_wordcloud(overall_hashtags)
+            else:
+                print("No se encontraron hashtags en los datos.")
 
-        # Fase Gold: Análisis avanzado
-        print("\n--- FASE GOLD: ANÁLISIS AVANZADO ---")
+            # Fase Gold: Análisis avanzado
+            print("\n--- FASE GOLD: ANÁLISIS AVANZADO ---")
 
-        # Análisis de sentimiento
-        print("\nRealizando análisis de sentimiento...")
-        extractor.analyze_sentiment()
+            # Análisis de sentimiento
+            print("\nRealizando análisis de sentimiento...")
+            extractor.analyze_sentiment()
 
-        # Mostrar distribución de sentimiento
-        sentiment_counts = extractor.data['sentiment_category'].value_counts()
-        print("\nDistribución de sentimiento:")
-        for sentiment, count in sentiment_counts.items():
-            percentage = count / len(extractor.data) * 100
-            print(f"- {sentiment.capitalize()}: {count} tweets ({percentage:.1f}%)")
+            # Mostrar distribución de sentimiento
+            sentiment_counts = extractor.data['sentiment_category'].value_counts()
+            print("\nDistribución de sentimiento:")
+            for sentiment, count in sentiment_counts.items():
+                percentage = count / len(extractor.data) * 100
+                print(f"- {sentiment.capitalize()}: {count} tweets ({percentage:.1f}%)")
 
-        # Modelado de tópicos
-        print("\nRealizando modelado de tópicos con LDA...")
-        topics = extractor.model_topics(num_topics=5)
+            # Modelado de tópicos
+            print("\nRealizando modelado de tópicos con LDA...")
+            topics = extractor.model_topics(num_topics=5)
 
-        # Mostrar tópicos
-        print("\nTópicos identificados:")
-        for i, topic_words in enumerate(topics):
-            print(f"Tópico {i + 1}: {', '.join(topic_words)}")
+            # Mostrar tópicos
+            print("\nTópicos identificados:")
+            for i, topic_words in enumerate(topics):
+                print(f"Tópico {i + 1}: {', '.join(topic_words)}")
 
-        # Generar resumen extractivo
-        print("\nGenerando resumen extractivo del corpus...")
-        summary = extractor.parse_and_summarize(summary_ratio=0.2)
+            # Generar resumen extractivo
+            print("\nGenerando resumen extractivo del corpus...")
+            summary = extractor.parse_and_summarize(summary_ratio=0.2)
 
-        print("\nResumen del corpus:")
-        print(summary[:300] + "..." if len(summary) > 300 else summary)
+            print("\nResumen del corpus:")
+            print(summary[:300] + "..." if len(summary) > 300 else summary)
 
-        # Generar visualizaciones avanzadas
-        print("\nGenerando visualizaciones avanzadas...")
-        extractor.generate_advanced_visualizations()
+            # Generar visualizaciones avanzadas
+            print("\nGenerando visualizaciones avanzadas...")
+            extractor.generate_advanced_visualizations()
 
-        # Generar informe final
-        print("\nGenerando informe final...")
-        report_path = extractor.generate_final_report()
+            # Generar informe final
+            print("\nGenerando informe final...")
+            report_path = extractor.generate_final_report()
 
-        print("\nProceso completado:")
-        print(f"- Fase Bronze: Datos extraídos guardados en {extractor.bronze_dir}")
-        print(f"- Fase Silver: Datos procesados guardados en {extractor.silver_dir}")
-        print(f"- Fase Gold: Resultados de análisis guardados en {extractor.gold_dir}")
-        print(f"- Informe final: {report_path}")
+            print("\nProceso completado:")
+            print(f"- Fase Bronze: Datos extraídos guardados en {extractor.bronze_dir}")
+            print(f"- Fase Silver: Datos procesados guardados en {extractor.silver_dir}")
+            print(f"- Fase Gold: Resultados de análisis guardados en {extractor.gold_dir}")
+            print(f"- Informe final: {report_path}")
+        
+        # Opción 3: Análisis de Red Social con NetworkX
+        if option == "3":
+            print("\n--- ANÁLISIS DE RED SOCIAL CON NETWORKX ---")
+            
+            # Construir el grafo de interacciones
+            print("\nConstruyendo grafo de interacciones...")
+            G = extractor.build_interaction_graph()
+            
+            if len(G.nodes()) == 0:
+                print("No se encontraron interacciones para analizar. Asegúrese de que los datos contienen menciones (@usuario).")
+                exit()
+            
+            print(f"\nGrafo construido con {len(G.nodes())} usuarios y {len(G.edges())} interacciones")
+            
+            # Analizar la red
+            print("\nAnalizando red y calculando métricas...")
+            metrics = extractor.analyze_network(G)
+            
+            # Mostrar métricas principales
+            print("\nMétricas principales de la red:")
+            print(f"- Número de nodos (usuarios): {metrics.get('num_nodes', 0)}")
+            print(f"- Número de aristas (interacciones): {metrics.get('num_edges', 0)}")
+            
+            if 'num_communities' in metrics and metrics['num_communities'] > 0:
+                print(f"- Número de comunidades detectadas: {metrics['num_communities']}")
+                print("\nComunidades más grandes:")
+                for i, (comm_id, members) in enumerate(metrics.get('largest_communities', [])[:3]):
+                    print(f"  * Comunidad {i+1}: {len(members)} miembros")
+            
+            # Mostrar usuarios más influyentes
+            if 'top_degree_centrality' in metrics and metrics['top_degree_centrality']:
+                print("\nUsuarios con mayor centralidad de grado (más conectados):")
+                for user, value in metrics['top_degree_centrality']:
+                    print(f"- @{user}: {value:.4f}")
+            
+            if 'max_in_degree' in metrics:
+                print(f"\nUsuario más mencionado: @{metrics['max_in_degree'][0]} con {metrics['max_in_degree'][1]} menciones")
+            
+            if 'max_out_degree' in metrics:
+                print(f"Usuario que más menciona a otros: @{metrics['max_out_degree'][0]} con {metrics['max_out_degree'][1]} menciones")
+            
+            # Preguntar si desea continuar con el análisis LLM
+            continue_llm = input("\n¿Desea continuar con el análisis mediante LLM? (s/n): ")
+            if continue_llm.lower() == 's':
+                # Pasar a la opción 4
+                option = "4"
+            else:
+                print("\nProceso de análisis de red completado.")
+                exit()
+                
+        # Opción 4: Generar prompt para LLM y obtener análisis
+        if option == "4":
+            print("\n--- ANÁLISIS CON MODELO DE LENGUAJE (LLM) ---")
+            
+            # Verificar si ya tenemos métricas de red
+            if 'metrics' not in locals():
+                print("\nSe esta generando análisis de red para crear el prompt...")
+                metrics = extractor.analyze_network()
+            
+            # Generar prompt para LLM
+            print("\nSe est generando prompt para el modelo de lenguaje...")
+            prompt = extractor.generate_prompt_from_network(metrics=metrics)
+            
+            # Preguntar si desea ejecutar el modelo LLM
+            run_model = input("\n¿Desea ejecutar el modelo de lenguaje? (Puede ser lento en CPU) (s/n): ")
+            if run_model.lower() == 's':
+                # Configuración del modelo
+                model_name = "gpt-4o"
+                print(f"\nUsando modelo {model_name}...")
+                
+                # Ejecutar el modelo con el prompt
+                extractor.chat_local_llm(prompt=prompt, model_name=model_name)
+            else:
+                # Mostrar el prompt generado
+                print("\nPrompt generado (puede usarlo manualmente en cualquier LLM):")
+                print("-" * 50)
+                print(prompt)
+                print("-" * 50)
+            
+            print("\nProceso completado.")
