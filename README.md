@@ -6,7 +6,7 @@ En esta práctica hemos ampliado el proyecto de análisis de sentimientos en Twi
 
 1. **Análisis de Redes Sociales**: He construido grafos que muestran cómo interactúan los usuarios mencionándose entre sí, descubriendo quiénes son los más influyentes y qué comunidades se forman.
 
-2. **Análisis con Modelos de Lenguaje (LLMs)**: Utilizando la información de las redes sociales, alimento un modelo de lenguaje (como el Gemma de Google o en mi caso GPT-4o de OpenAI) para que interprete los patrones de interacción y dé insights valiosos. Como no queria utilizar un modelo en local y como ya tenia acceso a la API de OpenAI, he pasado a utilizar el modelo 4o que es potente, rapido y su coste es minimo.
+2. **Análisis con Modelos de Lenguaje (LLMs)**: Utilizando la información de las redes sociales, alimento un modelo de lenguaje (como el Gemma de Google o en mi caso GPT-4o de OpenAI) para que interprete los patrones de interacción y dé insights valiosos. Como no podia utilizar un modelo en local y como ya tenia acceso a la API de OpenAI, he pasado a utilizar el modelo 4o que es potente, rapido y su coste es minimo.
 
 El proyecto entero funciona como una especie de "pipeline de datos": Extraemos tweets en tiempo real, los procesamos, analizamos, y finalmente obtenemos conclusiones mediante técnicas avanzadas.
 
